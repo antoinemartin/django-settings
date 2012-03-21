@@ -6,7 +6,7 @@ from django_settings import models, forms
 
 
 def get_setting_value(obj):
-    return obj.setting_object.value
+    return obj.string_value
 get_setting_value.short_description = _('Value')
 
 

@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.forms.models import modelform_factory
 from django.contrib.contenttypes.models import ContentType
 from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import smart_unicode
 
 from django_settings import models
 
@@ -14,15 +15,40 @@ class SettingForm(forms.ModelForm):
         fields = ('setting_type', 'name')
 
     value = forms.CharField()
+    setting_modules = ['django_settings.models']
+    
+    @classmethod
+    def get_setting_types_filter(cls):
+        '''
+        Creates a filter from all classes that derive from BaseSetting
+        in the modules listed in `settings_modules`. This allows
+        adding setting types that are part of another application
+        '''
+        if hasattr(cls, '_settings_types_filter'):
+            return cls._settings_types_filter
+        else:
+            q = Q()
+            import sys
+            for module_name in cls.setting_modules:
+                try:
+                    __import__(module_name)
+                except:
+                    continue
+                for name in filter(lambda x: x[0] != '_', dir(sys.modules[module_name])):
+                    model_attribute = getattr(models, name)
+                    if isinstance(model_attribute, type) and model_attribute.__bases__[0].__name__.endswith('BaseSetting'):
+                        q |= Q(name=smart_unicode(model_attribute._meta.verbose_name_raw))
+            return q
+    
 
     def __init__(self, *a, **kw):
         forms.ModelForm.__init__(self, *a, **kw)
-        self.fields['setting_type'].queryset = ContentType.objects.filter(
-            Q(name='string') | Q(name='integer') | Q(name='positive integer'))
+
+        self.fields['setting_type'].queryset = ContentType.objects.filter(self.__class__.get_setting_types_filter())
 
         instance = kw.get('instance')
         if instance:
-            self.fields['value'].initial = getattr(instance.setting_object, 'value', '')
+            self.fields['value'].initial = instance.string_value
 
     def clean(self):
         cd = self.cleaned_data
@@ -36,7 +62,7 @@ class SettingForm(forms.ModelForm):
             setting_form = SettingClassForm({'value': cd['value']})
             if not setting_form.is_valid():
                 del cd['value']
-                self._errors['value'] = self.error_class(['Value is not valid.'])
+                self._errors['value'] = setting_form.errors['value']
         return cd
 
     def save(self, *args, **kwargs):
