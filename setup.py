@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 
-from distutils.core import setup
+#from distutils.core import setup
+from setuptools import setup, find_packages
 import django_settings
 
 
@@ -12,9 +13,9 @@ setup(
     author='Kuba Janoszek',
     author_email='kuba.janoszek@gmail.com',
     url='http://github.com/jqb/django-settings',
-    packages=['django_settings'],
-    package_dir={
-        'django_settings': 'django_settings'},
+    packages=find_packages(),
+#    package_dir={
+#        'django_settings': 'django_settings'},
     classifiers=[
         'Development Status :: 1 - Beta',
         'Environment :: Web Environment',
