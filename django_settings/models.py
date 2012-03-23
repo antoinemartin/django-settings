@@ -150,20 +150,20 @@ class Setting(models.Model):
 def auto_refreshable_setting(name):
     
     # define the value
-    _value = Setting.objects.get_value(name)
+    _value = [ Setting.objects.get_value(name) ]
     
     # define a signal handler that will update the value if needed
     def signal_handler(sender, **kwargs):
         if kwargs['name'] == name:
             log.debug("setting with name %s updated to %s" % (kwargs['name'],kwargs['value']) )
-            _value = kwargs['value']
+            _value[0] = kwargs['value']
             
     # connect the handler
     setting_modified.connect(signal_handler,weak=False)
     
     # define the getter that will return our cached property
     def getter():
-        return _value
+        return _value[0]
     
     # return the getter
     return getter
