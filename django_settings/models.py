@@ -7,7 +7,11 @@ from django.db.models.signals import post_save
 from django.utils.translation import ugettext_lazy as _
 from dateutil.relativedelta import relativedelta
 from django.core.exceptions import ValidationError
+import django.dispatch
 
+
+import logging
+log = logging.getLogger('django_settings.models')
 
 class BaseSetting(models.Model):
     class Meta:
@@ -86,6 +90,10 @@ class TimeDelta(BaseSetting):
     value = TimedeltaField()
     
 
+# This signal allows caching of the settings in memory
+setting_modified = django.dispatch.Signal(providing_args=["name", "value"]) 
+    
+
 class SettingManager(models.Manager):
     def get_value(self, name, **kw):
         if 'default' in kw:
@@ -108,8 +116,8 @@ class SettingManager(models.Manager):
 
         setting.setting_object = SettingClass.objects.create(value=value)
         setting.save()
+        setting_modified.send(self, name=setting.name, value=setting.setting_object.value)
         return setting
-
 
 class Setting(models.Model):
     class Meta:
@@ -136,4 +144,27 @@ class Setting(models.Model):
         self.setting_object.value = value
         
     value=property(get_value, set_value)
+            
+        
+
+def auto_refreshable_setting(name):
     
+    # define the value
+    _value = Setting.objects.get_value(name)
+    
+    # define a signal handler that will update the value if needed
+    def signal_handler(sender, **kwargs):
+        if kwargs['name'] == name:
+            log.debug("setting with name %s updated to %s" % (kwargs['name'],kwargs['value']) )
+            _value = kwargs['value']
+            
+    # connect the handler
+    setting_modified.connect(signal_handler,weak=False)
+    
+    # define the getter that will return our cached property
+    def getter(cls):
+        return _value
+    
+    # return the getter
+    return property(getter)
+        

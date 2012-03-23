@@ -79,4 +79,6 @@ class SettingForm(forms.ModelForm):
         instance = forms.ModelForm.save(self, *args, **kwargs)
         instance.setting_id = setting_object.id
         instance.save()
+        models.setting_modified.send(self, name=instance.name, value=setting_object.value)
+
         return instance
