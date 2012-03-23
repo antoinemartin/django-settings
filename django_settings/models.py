@@ -162,9 +162,9 @@ def auto_refreshable_setting(name):
     setting_modified.connect(signal_handler,weak=False)
     
     # define the getter that will return our cached property
-    def getter(cls):
+    def getter():
         return _value
     
     # return the getter
-    return property(getter)
+    return getter
         
