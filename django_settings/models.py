@@ -76,6 +76,12 @@ class TimedeltaField(models.CharField):
         value = self._get_val_from_obj(obj)
         return self.get_prep_value(value)
 
+# south specific 
+try :
+    from south.modelsinspector import add_introspection_rules
+    add_introspection_rules([], ["^django_settings\.models\.TimedeltaField"])
+except:
+    pass
 
 class TimeDelta(BaseSetting):
     '''
