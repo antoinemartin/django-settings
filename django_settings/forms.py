@@ -63,6 +63,8 @@ class SettingForm(forms.ModelForm):
             if not setting_form.is_valid():
                 del cd['value']
                 self._errors['value'] = setting_form.errors['value']
+            else:
+                cd['value'] = setting_form.cleaned_data['value']
         return cd
 
     def save(self, *args, **kwargs):
