@@ -104,6 +104,7 @@ class SettingManager(models.Manager):
     def get_value(self, name, **kw):
         if 'default' in kw:
             if not self.value_object_exists(name):
+                print "setting with %s does not exist" % name
                 return kw.get('default')
         setting_object = self.get(name=name).setting_object
         return setting_object.value
@@ -153,10 +154,10 @@ class Setting(models.Model):
             
         
 
-def auto_refreshable_setting(name):
+def auto_refreshable_setting(name, **kwargs):
     
     # define the value
-    _value = [ Setting.objects.get_value(name) ]
+    _value = [ Setting.objects.get_value(name, **kwargs) ]
     
     # define a signal handler that will update the value if needed
     def signal_handler(sender, **kwargs):
