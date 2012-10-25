@@ -1,3 +1,5 @@
 *~
 *.pyc
 /django_settings.egg-info
+/build
+/dist
